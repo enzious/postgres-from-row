@@ -95,7 +95,7 @@ impl DeriveFromRow {
                     }
                 }
 
-                fn try_from_row(row: &postgres_from_row::tokio_postgres::Row) -> std::result::Result<Self, postgres_from_row::tokio_postgres::Error> {
+                fn try_from_row(row: &postgres_from_row::tokio_postgres::Row) -> std::result::Result<Self, postgres_from_row::FromRowError> {
                     Ok(Self {
                         #(#try_from_row_fields),*
                     })
@@ -111,7 +111,7 @@ impl DeriveFromRow {
                     selfs
                 }
 
-                fn try_from_rows(rows: &std::vec::Vec<postgres_from_row::tokio_postgres::Row>) -> std::result::Result<std::vec::Vec<Self>, postgres_from_row::tokio_postgres::Error>
+                fn try_from_rows(rows: &std::vec::Vec<postgres_from_row::tokio_postgres::Row>) -> std::result::Result<std::vec::Vec<Self>, postgres_from_row::FromRowError>
                 {
                     let mut selfs = vec![];
 
@@ -127,11 +127,24 @@ impl DeriveFromRow {
                     row.as_ref().map(|row| Self::from_row(row))
                 }
 
-                fn try_from_row_maybe(row: Option<&postgres_from_row::tokio_postgres::Row>) -> std::result::Result<std::option::Option<Self>, postgres_from_row::tokio_postgres::Error>
+                fn try_from_row_maybe(row: Option<&postgres_from_row::tokio_postgres::Row>) -> std::result::Result<std::option::Option<Self>, postgres_from_row::FromRowError>
                 {
                     Ok(match row.as_ref() {
                         Some(row) => Some(Self::try_from_row(row)?),
                         None => None,
+                    })
+                }
+
+                fn from_row_expect(row: Option<&postgres_from_row::tokio_postgres::Row>) -> Self
+                {
+                    Self::from_row(row.as_ref().expect("Row does not exist"))
+                }
+
+                fn try_from_row_expect(row: Option<&postgres_from_row::tokio_postgres::Row>) -> std::result::Result<Self, postgres_from_row::FromRowError>
+                {
+                    Ok(match row.as_ref() {
+                        Some(row) => Self::try_from_row(row)?,
+                        None => return Err(postgres_from_row::FromRowError::NoRow {})?,
                     })
                 }
             }
@@ -254,7 +267,7 @@ impl FromRowField {
             let try_from = quote!(std::convert::TryFrom<#target_ty>);
 
             predicates.push(quote!(#ty: #try_from));
-            predicates.push(quote!(postgres_from_row::tokio_postgres::Error: std::convert::From<<#ty as #try_from>::Error>));
+            predicates.push(quote!(postgres_from_row::FromRowError: std::convert::From<<#ty as #try_from>::Error>));
             predicates.push(quote!(<#ty as #try_from>::Error: std::fmt::Debug));
         }
 
