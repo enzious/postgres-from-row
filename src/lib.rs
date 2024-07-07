@@ -35,12 +35,12 @@ pub trait FromRow: Sized {
     /// # Panics
     ///
     /// Panics if the row does not contain the expected column names.
-    fn from_row_maybe(row: &Option<tokio_postgres::Row>) -> Option<Self>;
+    fn from_row_maybe(row: Option<&tokio_postgres::Row>) -> Option<Self>;
 
     /// Try's to perform the conversion on an optional row.
     ///
     /// Will return an error if the row does not contain the expected column names.
     fn try_from_row_maybe(
-        row: &Option<tokio_postgres::Row>,
+        row: Option<&tokio_postgres::Row>,
     ) -> Result<Option<Self>, tokio_postgres::Error>;
 }

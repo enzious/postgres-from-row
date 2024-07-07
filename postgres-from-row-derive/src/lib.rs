@@ -111,7 +111,8 @@ impl DeriveFromRow {
                     selfs
                 }
 
-                fn try_from_rows(rows: &std::vec::Vec<postgres_from_row::tokio_postgres::Row>) -> std::result::Result<std::vec::Vec<Self>, postgres_from_row::tokio_postgres::Error> {
+                fn try_from_rows(rows: &std::vec::Vec<postgres_from_row::tokio_postgres::Row>) -> std::result::Result<std::vec::Vec<Self>, postgres_from_row::tokio_postgres::Error>
+                {
                     let mut selfs = vec![];
 
                     for row in rows {
@@ -121,11 +122,13 @@ impl DeriveFromRow {
                     Ok(selfs)
                 }
 
-                fn from_row_maybe(row: &Option<postgres_from_row::tokio_postgres::Row>) -> std::option::Option<Self> {
+                fn from_row_maybe(row: Option<&postgres_from_row::tokio_postgres::Row>) -> std::option::Option<Self>
+                {
                     row.as_ref().map(|row| Self::from_row(row))
                 }
 
-                fn try_from_row_maybe(row: &Option<postgres_from_row::tokio_postgres::Row>) -> std::result::Result<std::option::Option<Self>, postgres_from_row::tokio_postgres::Error> {
+                fn try_from_row_maybe(row: Option<&postgres_from_row::tokio_postgres::Row>) -> std::result::Result<std::option::Option<Self>, postgres_from_row::tokio_postgres::Error>
+                {
                     Ok(match row.as_ref() {
                         Some(row) => Some(Self::try_from_row(row)?),
                         None => None,

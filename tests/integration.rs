@@ -43,7 +43,7 @@ fn from_rows(row: &Vec<Row>) {
 }
 
 #[allow(dead_code)]
-fn from_row_maybe(row: &Option<Row>) {
+fn from_row_maybe(row: Option<&Row>) {
     let _ = Todo::from_row_maybe(row);
     let _ = Todo::try_from_row_maybe(row).unwrap();
 
