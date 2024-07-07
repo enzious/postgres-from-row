@@ -30,5 +30,23 @@ fn from_row(row: &Row) {
     let _ = Todo::try_from_row(row).unwrap();
 
     let _ = User::from_row(row);
-    let _ = Todo::try_from_row(row).unwrap();
+    let _ = User::try_from_row(row).unwrap();
+}
+
+#[allow(dead_code)]
+fn from_rows(row: &Vec<Row>) {
+    let _ = Todo::from_rows(row);
+    let _ = Todo::try_from_rows(row).unwrap();
+
+    let _ = User::from_rows(row);
+    let _ = User::try_from_rows(row).unwrap();
+}
+
+#[allow(dead_code)]
+fn from_row_maybe(row: &Option<Row>) {
+    let _ = Todo::from_row_maybe(row);
+    let _ = Todo::try_from_row_maybe(row).unwrap();
+
+    let _ = User::from_row_maybe(row);
+    let _ = User::try_from_row_maybe(row).unwrap();
 }

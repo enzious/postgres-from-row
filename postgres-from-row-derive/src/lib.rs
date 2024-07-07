@@ -100,6 +100,37 @@ impl DeriveFromRow {
                         #(#try_from_row_fields),*
                     })
                 }
+
+                fn from_rows(rows: &std::vec::Vec<postgres_from_row::tokio_postgres::Row>) -> std::vec::Vec<Self> {
+                    let mut selfs = vec![];
+
+                    for row in rows {
+                        selfs.push(Self::from_row(row));
+                    }
+
+                    selfs
+                }
+
+                fn try_from_rows(rows: &std::vec::Vec<postgres_from_row::tokio_postgres::Row>) -> std::result::Result<std::vec::Vec<Self>, postgres_from_row::tokio_postgres::Error> {
+                    let mut selfs = vec![];
+
+                    for row in rows {
+                        selfs.push(Self::try_from_row(row)?);
+                    }
+
+                    Ok(selfs)
+                }
+
+                fn from_row_maybe(row: &Option<postgres_from_row::tokio_postgres::Row>) -> std::option::Option<Self> {
+                    row.as_ref().map(|row| Self::from_row(row))
+                }
+
+                fn try_from_row_maybe(row: &Option<postgres_from_row::tokio_postgres::Row>) -> std::result::Result<std::option::Option<Self>, postgres_from_row::tokio_postgres::Error> {
+                    Ok(match row.as_ref() {
+                        Some(row) => Some(Self::try_from_row(row)?),
+                        None => None,
+                    })
+                }
             }
         }
         .into())
@@ -136,12 +167,7 @@ struct FromRowField {
 impl FromRowField {
     /// Checks wether this field has a valid combination of attributes
     fn validate(&self) -> Result<()> {
-        match (
-            &self.from,
-            &self.from_fn,
-            &self.try_from,
-            &self.try_from_fn,
-        ) {
+        match (&self.from, &self.from_fn, &self.try_from, &self.try_from_fn) {
             (Some(_), None, None, None) => {}
             (None, Some(_), None, None) => {}
             (None, None, Some(_), None) => {}
@@ -155,7 +181,12 @@ impl FromRowField {
             }
         }
 
-        if self.flatten && (self.from.is_some() || self.try_from.is_some() || self.from_fn.is_some() || self.try_from_fn.is_some()) {
+        if self.flatten
+            && (self.from.is_some()
+                || self.try_from.is_some()
+                || self.from_fn.is_some()
+                || self.try_from_fn.is_some())
+        {
             return Err(Error::custom(
                 r#"can't combine `#[from_row(flatten)]` with one of the `#[from_row(*from*)]` attributes`"#,
             )
