@@ -1,5 +1,8 @@
+#![feature(error_generic_member_access)]
 #![deny(missing_docs)]
 #![doc = include_str!("../README.md")]
+
+use std::backtrace::Backtrace;
 
 pub use postgres_from_row_derive::FromRow;
 use thiserror::Error;
@@ -24,12 +27,12 @@ pub trait FromRow: Sized {
     /// # Panics
     ///
     /// Panics if the row does not contain the expected column names.
-    fn from_rows(row: &Vec<tokio_postgres::Row>) -> Vec<Self>;
+    fn from_rows(row: &[tokio_postgres::Row]) -> Vec<Self>;
 
     /// Try's to perform the conversion on a vector of rows.
     ///
     /// Will return an error if the row does not contain the expected column names.
-    fn try_from_rows(row: &Vec<tokio_postgres::Row>) -> Result<Vec<Self>, FromRowError>;
+    fn try_from_rows(row: &[tokio_postgres::Row]) -> Result<Vec<Self>, FromRowError>;
 
     /// Perform the conversion on an optional row.
     ///
@@ -63,6 +66,11 @@ pub enum FromRowError {
     #[error("No row found when expected")]
     NoRow,
     ///
-    #[error(transparent)]
-    PostgresError(#[from] tokio_postgres::Error),
+    #[error("{source}")]
+    PostgresError {
+        ///
+        source: tokio_postgres::Error,
+        ///
+        backtrace: Backtrace,
+    },
 }

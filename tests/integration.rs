@@ -34,12 +34,12 @@ fn from_row(row: &Row) {
 }
 
 #[allow(dead_code)]
-fn from_rows(row: &Vec<Row>) {
-    let _ = Todo::from_rows(row);
-    let _ = Todo::try_from_rows(row).unwrap();
+fn from_rows(rows: &[Row]) {
+    let _ = Todo::from_rows(rows);
+    let _ = Todo::try_from_rows(rows).unwrap();
 
-    let _ = User::from_rows(row);
-    let _ = User::try_from_rows(row).unwrap();
+    let _ = User::from_rows(rows);
+    let _ = User::try_from_rows(rows).unwrap();
 }
 
 #[allow(dead_code)]

@@ -71,7 +71,7 @@ impl DeriveFromRow {
         let ident = &self.ident;
 
         let (impl_generics, ty_generics, where_clause) = self.generics.split_for_impl();
-        let original_predicates = where_clause.clone().map(|w| &w.predicates).into_iter();
+        let original_predicates = where_clause.map(|w| &w.predicates).into_iter();
         let predicates = self.predicates()?;
 
         let from_row_fields = self
@@ -101,7 +101,7 @@ impl DeriveFromRow {
                     })
                 }
 
-                fn from_rows(rows: &std::vec::Vec<postgres_from_row::tokio_postgres::Row>) -> std::vec::Vec<Self> {
+                fn from_rows(rows: &[postgres_from_row::tokio_postgres::Row]) -> std::vec::Vec<Self> {
                     let mut selfs = vec![];
 
                     for row in rows {
@@ -111,7 +111,7 @@ impl DeriveFromRow {
                     selfs
                 }
 
-                fn try_from_rows(rows: &std::vec::Vec<postgres_from_row::tokio_postgres::Row>) -> std::result::Result<std::vec::Vec<Self>, postgres_from_row::FromRowError>
+                fn try_from_rows(rows: &[postgres_from_row::tokio_postgres::Row]) -> std::result::Result<std::vec::Vec<Self>, postgres_from_row::FromRowError>
                 {
                     let mut selfs = vec![];
 
@@ -235,8 +235,7 @@ impl FromRowField {
     /// By default this is the same as the rust field name but can be overwritten by `#[from_row(rename = "..")]`.
     fn column_name(&self) -> String {
         self.rename
-            .as_ref()
-            .map(Clone::clone)
+            .clone()
             .unwrap_or_else(|| self.ident.as_ref().unwrap().to_string())
     }
 
@@ -274,7 +273,7 @@ impl FromRowField {
         Ok(())
     }
 
-    /// Generate the line needed to retrievee this field from a row when calling `from_row`.
+    /// Generate the line needed to retrieve this field from a row when calling `from_row`.
     fn generate_from_row(&self) -> Result<TokenStream2> {
         let ident = self.ident.as_ref().unwrap();
         let column_name = self.column_name();
@@ -292,10 +291,10 @@ impl FromRowField {
         };
 
         if let Some(from_fn) = &self.from_fn {
-            let from_fn = TokenStream2::from_str(&from_fn)?;
+            let from_fn = TokenStream2::from_str(from_fn)?;
             base = quote!(#from_fn(#base));
         } else if let Some(try_from_fn) = &self.try_from_fn {
-            let try_from_fn = TokenStream2::from_str(&try_from_fn)?;
+            let try_from_fn = TokenStream2::from_str(try_from_fn)?;
             base = quote!(#try_from_fn(#base).expect("could not convert column"));
         } else if self.from.is_some() {
             base = quote!(<#field_ty as std::convert::From<#target_ty>>::from(#base));
@@ -320,14 +319,22 @@ impl FromRowField {
         let mut base = if self.flatten {
             quote!(<#target_ty as postgres_from_row::FromRow>::try_from_row(row)?)
         } else {
-            quote!(postgres_from_row::tokio_postgres::Row::try_get::<&str, #target_ty>(row, #column_name)?)
+            quote!(
+              postgres_from_row::tokio_postgres::Row::try_get::<&str, #target_ty>(row, #column_name)
+                .map_err(|source| {
+                    postgres_from_row::FromRowError::PostgresError {
+                        source,
+                        backtrace: std::backtrace::Backtrace::force_capture(),
+                    }
+                })?
+            )
         };
 
         if let Some(from_fn) = &self.from_fn {
-            let from_fn = TokenStream2::from_str(&from_fn)?;
+            let from_fn = TokenStream2::from_str(from_fn)?;
             base = quote!(#from_fn(#base));
         } else if let Some(try_from_fn) = &self.try_from_fn {
-            let try_from_fn = TokenStream2::from_str(&try_from_fn)?;
+            let try_from_fn = TokenStream2::from_str(try_from_fn)?;
             base = quote!(#try_from_fn(#base)?);
         } else if self.from.is_some() {
             base = quote!(<#field_ty as std::convert::From<#target_ty>>::from(#base));
